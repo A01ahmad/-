@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منصة التداول الموحدة - الأسواق العالمية وبورصة عمّان</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Tahoma', 'Arial', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      text-align: right;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+
+    header p {
+      font-size: 1.1em;
+      opacity: 0.9;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 25px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .card h2 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 1.5em;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .price-display {
+      font-size: 1.3em;
+      color: #667eea;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .price-display.loading {
+      color: #999;
+      font-style: italic;
+    }
+
+    .price-display.error {
+      color: #e74c3c;
+    }
+
+    .change {
+      margin-top: 10px;
+      font-size: 0.95em;
+    }
+
+    .change.positive {
+      color: #27ae60;
+    }
+
+    .change.negative {
+      color: #e74c3c;
+    }
+
+    .chart-container {
+      background: #fff;
+      border-radius: 10px;
+      padding: 25px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 30px;
+      position: relative;
+      height: 400px;
+    }
+
+    .chart-container h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 1.5em;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    canvas {
+      max-height: 300px;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+      transition: opacity 0.3s;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .info-box {
+      background: #ecf0f1;
+      border-right: 4px solid #667eea;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 15px;
+      font-size: 0.9em;
+      color: #555;
+    }
+
+    .timestamp {
+      font-size: 0.85em;
+      color: #999;
+      margin-top: 10px;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      color: #666;
+      padding: 20px;
+    }
+
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 1.8em;
+      }
+
+      .cards-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-container {
+        height: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📊 منصة التداول الموحدة</h1>
+    <p>الأسواق العالمية وبورصة عمّان</p>
+  </header>
+
+  <div class="container">
+    <div class="cards-grid">
+      <!-- Bitcoin / USDT -->
+      <div class="card">
+        <h2>🪙 البيتكوين (BTC/USDT)</h2>
+        <p id="btc-price" class="price-display loading">جاري التحميل...</p>
+        <p id="btc-change" class="change"></p>
+        <p id="btc-timestamp" class="timestamp"></p>
+        <div class="info-box">
+          <p><strong>المصدر:</strong> Binance API</p>
+        </div>
+      </div>
+
+      <!-- Ethereum -->
+      <div class="card">
+        <h2>⟠ الإثيريوم (ETH/USDT)</h2>
+        <p id="eth-price" class="price-display loading">جاري التحميل...</p>
+        <p id="eth-change" class="change"></p>
+        <p id="eth-timestamp" class="timestamp"></p>
+        <div class="info-box">
+          <p><strong>المصدر:</strong> Binance API</p>
+        </div>
+      </div>
+
+      <!-- Amman Stock Exchange -->
+      <div class="card">
+        <h2>📈 مؤشر بورصة عمّان (JOEX)</h2>
+        <p id="joex-price" class="price-display loading">جاري التحميل...</p>
+        <p id="joex-change" class="change"></p>
+        <p id="joex-timestamp" class="timestamp"></p>
+        <div class="info-box">
+          <p><strong>ملاحظة:</strong> بيانات تجريبية - يتطلب API رسمي من بورصة عمّان</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-container">
+      <h2>📉 مقارنة الأسعار (بيانات تجريبية)</h2>
+      <canvas id="marketChart"></canvas>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="button-group">
+      <button onclick="executeOrder()">🚀 تنفيذ أمر شراء</button>
+      <button onclick="executeOrder('sell')">📉 تنف��ذ أمر بيع</button>
+      <button onclick="refreshPrices()">🔄 تحديث البيانات</button>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2026 منصة التداول الموحدة - جميع الحقوق محفوظة</p>
+  </footer>
+
+  <script>
+    // ==================== البيانات والمتغيرات ====================
+    let bitcoinPrice = null;
+    let ethereumPrice = null;
+    let joexPrice = null;
+    let chart = null;
+
+    // ==================== جلب أسعار البيتكوين ====================
+    async function fetchBitcoinPrice() {
+      try {
+        const response = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT");
+        if (!response.ok) throw new Error("فشل جلب بيانات البيتكوين");
+        
+        const data = await response.json();
+        bitcoinPrice = parseFloat(data.price);
+        
+        document.getElementById("btc-price").innerHTML = `$${bitcoinPrice.toLocaleString('ar-EG')}`;
+        document.getElementById("btc-price").classList.remove("loading");
+        document.getElementById("btc-timestamp").innerHTML = `آخر تحديث: ${new Date().toLocaleTimeString('ar-EG')}`;
+        
+        return bitcoinPrice;
+      } catch (error) {
+        console.error("خطأ في جلب سعر البيتكوين:", error);
+        document.getElementById("btc-price").innerHTML = "❌ خطأ في التحميل";
+        document.getElementById("btc-price").classList.add("error");
+      }
+    }
+
+    // ==================== جلب أسعار الإثيريوم ====================
+    async function fetchEthereumPrice() {
+      try {
+        const response = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT");
+        if (!response.ok) throw new Error("فشل جلب بيانات الإثيريوم");
+        
+        const data = await response.json();
+        ethereumPrice = parseFloat(data.price);
+        
+        document.getElementById("eth-price").innerHTML = `$${ethereumPrice.toLocaleString('ar-EG')}`;
+        document.getElementById("eth-price").classList.remove("loading");
+        document.getElementById("eth-timestamp").innerHTML = `آخر تحديث: ${new Date().toLocaleTimeString('ar-EG')}`;
+        
+        return ethereumPrice;
+      } catch (error) {
+        console.error("خطأ في جلب سعر الإثيريوم:", error);
+        document.getElementById("eth-price").innerHTML = "❌ خطأ في التحميل";
+        document.getElementById("eth-price").classList.add("error");
+      }
+    }
+
+    // ==================== جلب بيانات بورصة عمّان (محاكاة) ====================
+    async function fetchAmmanPrice() {
+      try {
+        // هذه بيانات تجريبية - يجب استبدالها ببيانات حقيقية من API رسمي
+        // يمكن استخدام: https://www.ase.com.jo/ (بورصة عمّان الرسمية)
+        
+        // محاكاة تأخير الشبكة
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        joexPrice = 1850 + Math.random() * 50; // بيانات عشوائية للتجربة
+        
+        document.getElementById("joex-price").innerHTML = `${joexPrice.toFixed(2)} نقطة`;
+        document.getElementById("joex-price").classList.remove("loading");
+        document.getElementById("joex-timestamp").innerHTML = `آخر تحديث: ${new Date().toLocaleTimeString('ar-EG')}`;
+        
+        return joexPrice;
+      } catch (error) {
+        console.error("خطأ في جلب بيانات بورصة عمّان:", error);
+        document.getElementById("joex-price").innerHTML = "❌ خطأ في التحميل";
+        document.getElementById("joex-price").classList.add("error");
+      }
+    }
+
+    // ==================== رسم البيان ====================
+    function initializeChart() {
+      const ctx = document.getElementById('marketChart').getContext('2d');
+      
+      if (chart) {
+        chart.destroy(); // تدمير الرسم البياني السابق
+      }
+
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00'],
+          datasets: [
+            {
+              label: 'BTC/USDT',
+              data: [42000, 42500, 41800, 43200, 42800, bitcoinPrice || 43000],
+              borderColor: '#f7931a',
+              backgroundColor: 'rgba(247, 147, 26, 0.1)',
+              borderWidth: 2,
+              fill: true,
+              tension: 0.4
+            },
+            {
+              label: 'ETH/USDT',
+              data: [2300, 2350, 2280, 2400, 2350, ethereumPrice || 2380],
+              borderColor: '#627eea',
+              backgroundColor: 'rgba(98, 126, 234, 0.1)',
+              borderWidth: 2,
+              fill: true,
+              tension: 0.4
+            },
+            {
+              label: 'JOEX Index',
+              data: [1800, 1810, 1790, 1820, 1830, joexPrice || 1850],
+              borderColor: '#27ae60',
+              backgroundColor: 'rgba(39, 174, 96, 0.1)',
+              borderWidth: 2,
+              fill: true,
+              tension: 0.4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                usePointStyle: true,
+                padding: 15,
+                font: { size: 12 }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: false,
+              title: {
+                display: true,
+                text: 'السعر (USD)'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // ==================== تحديث جميع الأسعار ====================
+    async function refreshPrices() {
+      document.querySelectorAll('.price-display').forEach(el => {
+        el.classList.add('loading');
+        el.innerHTML = 'جاري التحديث...';
+      });
+
+      await Promise.all([
+        fetchBitcoinPrice(),
+        fetchEthereumPrice(),
+        fetchAmmanPrice()
+      ]);
+
+      initializeChart();
+    }
+
+    // ==================== تنفيذ أمر ====================
+    function executeOrder(type = 'buy') {
+      const orderType = type === 'buy' ? 'شراء' : 'بيع';
+      alert(`✅ تم إرسال أمر ${orderType}\n\nملاحظة: هذا نموذج توضيحي فقط`);
+    }
+
+    // ==================== التهيئة الأولية ====================
+    window.addEventListener('DOMContentLoaded', () => {
+      refreshPrices();
+      
+      // تحديث الأسعار كل 30 ثانية
+      setInterval(refreshPrices, 30000);
+    });
+  </script>
+</body>
+</html>
